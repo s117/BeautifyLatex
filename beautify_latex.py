@@ -35,7 +35,7 @@ class BeautifyLatexCommand(sublime_plugin.TextCommand):
 
     ext = os.path.splitext(self.view.file_name())[1]
     with tempfile.NamedTemporaryFile(delete=False,suffix=ext) as temp:
-      try: 
+      try:
           temp.write(buffer_text.encode("utf-8"))
           temp.flush()
           temp.close()
@@ -43,7 +43,7 @@ class BeautifyLatexCommand(sublime_plugin.TextCommand):
           fix_lines = beautified_buffer.replace(os.linesep,'\n')
           self.check_valid_output(fix_lines)
           self.view.replace(edit, buffer_region, fix_lines)
-      finally: 
+      finally:
           os.unlink(temp.name)
     self.reset_viewport_state()
 
@@ -57,7 +57,6 @@ class BeautifyLatexCommand(sublime_plugin.TextCommand):
     if not os.path.exists(executable):
       msg = "executable: '" + executable + "' not found."
       raise Exception(msg)
-
     return '"' + executable + '" "' + str(path) + '"'
 
   def finalize_output(self, text):
@@ -91,8 +90,8 @@ class BeautifyLatexCommand(sublime_plugin.TextCommand):
 
   def pipe(self, cmd):
     cwd = os.path.dirname(self.view.file_name())
-    beautifier = subprocess.Popen(cmd, shell=True, cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    out = beautifier.communicate(''.encode("utf-8"))[0]
+    beautifier = subprocess.Popen(cmd, shell=True, cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = beautifier.communicate()
     return out.decode('utf8')
 
   # http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python/377028#377028
@@ -100,13 +99,20 @@ class BeautifyLatexCommand(sublime_plugin.TextCommand):
     import os
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
+    def get_path():
+      extra = sublime.load_settings('BeautifyLatex.sublime-settings').get('extra_path')
+      path = os.environ["PATH"].split(os.pathsep)
+      if isinstance(extra, list):
+        for i in extra:
+          path.append(i)
+      return path
     fpath, fname = os.path.split(program)
+    search_path = get_path()
     if fpath:
         if is_exe(program):
             return program
     else:
-        for path in os.environ["PATH"].split(os.pathsep):
+        for path in search_path:
             path = path.strip('"')
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):

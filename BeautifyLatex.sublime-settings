@@ -1,5 +1,6 @@
 {
   "file_patterns": ["\\.tex"],
   "run_on_save": false,
-  "save_on_beautify": true
+  "save_on_beautify": true,
+  "extra_path" : [""]
 }
